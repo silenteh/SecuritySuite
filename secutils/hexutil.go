@@ -19,11 +19,17 @@ func HexStringToASCII(hexString string) string {
 	return string(data[:])
 }
 
-func ASCIIStringToHex(asciiString string) string {
-	bytes := ASCIIStringToBytes(asciiString)
+func BytesToHex(bytes []byte) string {
 	return hex.EncodeToString(bytes)
 }
 
-func ASCIIStringToBytes(asciiString string) []byte {
-	return []byte(asciiString)
+func ASCIIStringToHex(asciiString string) string {
+	bytes := ASCIIStringToBytes(asciiString)
+	return BytesToHex(bytes)
+}
+
+func HexToBase64(hexString string) string {
+
+	hexBytes := HexStringToBytes(hexString)
+	return BytesToBase64(hexBytes)
 }

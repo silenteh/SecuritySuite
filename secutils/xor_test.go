@@ -1,6 +1,7 @@
 package secutils
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 )
@@ -34,5 +35,7 @@ func TestXor(t *testing.T) {
 	if res_0xor1.Sign() != 1 {
 		t.Error("Expected 1, got ", res_0xor1)
 	}
+
+	fmt.Println("Test Xor: OK")
 
 }

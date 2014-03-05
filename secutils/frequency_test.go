@@ -1,6 +1,9 @@
 package secutils
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestGenerateTable(t *testing.T) {
 
@@ -9,4 +12,7 @@ func TestGenerateTable(t *testing.T) {
 	if ft[0].Frequency != 2 || ft[0].Letter != " " {
 		t.Error("Frequency table calculation is wrong")
 	}
+
+	fmt.Println("Test GenerateTable - Frequency Table: OK")
+	fmt.Println(CryptoFrequencyTable)
 }

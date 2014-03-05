@@ -1,6 +1,9 @@
 package secutils
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestHammingDistance(t *testing.T) {
 	var resultRoses int
@@ -24,4 +27,5 @@ func TestHammingDistance(t *testing.T) {
 		t.Error("Expected 3, got ", expectedDec)
 	}
 
+	fmt.Println("Test HammingDistance: OK")
 }
