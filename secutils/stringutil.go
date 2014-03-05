@@ -13,12 +13,14 @@ var ASCII []Char = createASCII()
 
 func createASCII() []Char {
 
-	max := 128
+	max := 127 - 32
 	chars := make([]Char, max)
 
-	for i := 0; i < 128; i++ {
+	index := 0
+	for i := 32; i < 127; i++ {
 		char := byte(i)
-		chars[i] = Char{char, string(char)}
+		chars[index] = Char{char, string(char)}
+		index++
 	}
 	return chars
 

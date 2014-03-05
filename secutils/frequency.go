@@ -3,6 +3,9 @@ package secutils
 import (
 	"io/ioutil"
 	"log"
+	//"os"
+	//"path"
+	//"path/filepath"
 	"sort"
 )
 
@@ -58,16 +61,22 @@ func GenerateTable(data string) FrequencyTable {
 
 func preGenerateTableMapForCrypto() map[string]int {
 
-	bytes, err := ioutil.ReadFile("sherlock.txt")
+	// dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//fmt.Println(dir)
+
+	//bytes, err := ioutil.ReadFile(path.Join(dir, "./sherlock.txt"))
+	bytes, err := ioutil.ReadFile("./sherlock.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	return createFrequencyTableMap(bytes)
 }
 
-func KeyScore(key string) int {
-
-	bytes := []byte(key)
+func KeyScore(text string) int {
+	bytes := []byte(text)
 	bytesLen := len(bytes)
 	total := 0
 
@@ -75,6 +84,5 @@ func KeyScore(key string) int {
 		b := bytes[i]
 		total += CryptoMap[string(b)]
 	}
-
 	return (total / bytesLen)
 }
