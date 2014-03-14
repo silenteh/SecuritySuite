@@ -1,11 +1,7 @@
 package secutils
 
 import (
-	"io/ioutil"
-	"log"
-	//"os"
-	//"path"
-	//"path/filepath"
+	"fmt"
 	"sort"
 )
 
@@ -45,6 +41,16 @@ func createFrequencyTableMap(bytes []byte) map[string]int {
 	return frequencyTableMap
 }
 
+func createFrequencyTableMapFromStrings(stringList []string) map[string]int {
+	frequencyTableMap := make(map[string]int)
+
+	for i := range stringList {
+		frequencyTableMap[string(stringList[i])] += 1 // increase the fequency
+	}
+
+	return frequencyTableMap
+}
+
 func createFrequencyTable(bytes []byte) FrequencyTable {
 	frequencyTableMap := createFrequencyTableMap(bytes)
 
@@ -61,17 +67,7 @@ func GenerateTable(data string) FrequencyTable {
 
 func preGenerateTableMapForCrypto() map[string]int {
 
-	// dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	//fmt.Println(dir)
-
-	//bytes, err := ioutil.ReadFile(path.Join(dir, "./sherlock.txt"))
-	bytes, err := ioutil.ReadFile("./sherlock.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
+	bytes := LoadFile("../sherlock.txt")
 	return createFrequencyTableMap(bytes)
 }
 
@@ -85,4 +81,26 @@ func KeyScore(text string) int {
 		total += CryptoMap[string(b)]
 	}
 	return (total / bytesLen)
+}
+
+func BlocksFrequency(bytes []byte, blockSize int) FrequencyTable {
+
+	blocks := len(bytes) / blockSize
+	mod := len(bytes) % blockSize
+	if mod != 0 {
+		fmt.Println("Cannot split the string because it is not a multiple of the block size")
+		return nil
+	}
+
+	stringBlocks := make([]string, blocks)
+
+	for block := range stringBlocks {
+		start := block * blockSize
+		end := start + blockSize
+		stringBlocks[block] = BytesToHex(bytes[start:end])
+		//fmt.Printf("%s\n", stringBlocks[block])
+	}
+
+	freqMap := createFrequencyTableMapFromStrings(stringBlocks)
+	return SortMapByValue(freqMap)
 }

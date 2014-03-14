@@ -1,7 +1,12 @@
 package secutils
 
 import (
+	"bufio"
+	//"fmt"
+	"io/ioutil"
+	"log"
 	"math/big"
+	"os"
 )
 
 type Char struct {
@@ -11,6 +16,7 @@ type Char struct {
 
 var ASCII []Char = createASCII()
 
+// creates an ASCII table with the first 32 bytes removed - mostly control chars
 func createASCII() []Char {
 
 	max := 127 - 32
@@ -46,4 +52,36 @@ func BigIntToHex(bigInt *big.Int) string {
 func BigIntToBase64(bigInt *big.Int) string {
 	bytes := BigIntToBytes(bigInt)
 	return BytesToBase64(bytes)
+}
+
+func LoadFile(filename string) []byte {
+
+	bytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bytes
+
+}
+
+func LoadFileLines(filename string) ([]string, error) {
+
+	file, err := os.Open(filename)
+
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	//i := 0
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+		//println(scanner.Text())
+		//fmt.Printf("%d - %s\n", i, scanner.Text())
+		//i++
+	}
+	return lines, scanner.Err()
+
 }
