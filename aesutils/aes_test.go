@@ -81,3 +81,22 @@ func TestDecryptAES_ECB_Manual(t *testing.T) {
 	fmt.Printf("4. Test DecryptAES_ECB_Manual + PADDING: %s\n", textPadding)
 
 }
+
+func TestEncryptAES_CBC_Manual(t *testing.T) {
+	text := "YELLOW SUBMARINE"
+	key := "YELLOW SUBMARINE"
+	cipherTextBytes := EncryptAES_CBC_Manual(text, key)
+	cipherHex := secutils.BytesToHex(cipherTextBytes)
+	fmt.Printf("5. Test EncryptAES_CBC Manual: %s\n", cipherHex)
+}
+
+//d7ab340a60337584edbab1a82d6b0977
+func TestDecryptAES_CBC_Manual(t *testing.T) {
+	text := secutils.HexStringToBytes("a6af0c64422b96e8923c1ebe819e82553e8e38f74e1693a9cde95502229ddcc0")
+	key := secutils.ASCIIStringToBytes("YELLOW SUBMARINE")
+	//cipherTextBytes, _ := DecryptAES_CBC(text, key)
+	cipherTextBytes := DecryptAES_CBC_Manual(text, key)
+
+	//cipherHex := secutils.BytesToHex(cipherTextBytes)
+	fmt.Printf("6. Test DecryptAES_CBC Manual: %s\n", cipherTextBytes)
+}

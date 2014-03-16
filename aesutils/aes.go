@@ -5,7 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"fmt"
+	//"fmt"
 	"github.com/silenteh/security_suite/secutils"
 	"io"
 )
@@ -15,6 +15,14 @@ var BlockSize int = aes.BlockSize
 // It's important to remember that ciphertexts must be authenticated
 // (i.e. by using crypto/hmac) as well as being encrypted in order to
 // be secure.
+
+func GenerateRandomKey() []byte {
+	key := make([]byte, BlockSize)
+	if _, err := io.ReadFull(rand.Reader, key); err != nil {
+		panic(err)
+	}
+	return key
+}
 
 //#######################################################################################################################
 //#######################################################################################################################
@@ -67,7 +75,7 @@ func EncryptAES_CBC(plainText, key string) ([]byte, error) {
 	if mod != 0 {
 		//panic("plaintext is not a multiple of the block size")
 		plainTextBytes = Pkcs7(plainTextBytes, BlockSize)
-		fmt.Printf("%s\n", plainTextBytes)
+		//fmt.Printf("%s\n", plainTextBytes)
 		plainTextLen = len(plainTextBytes)
 	}
 
@@ -118,10 +126,10 @@ func DecryptAES_CBC(cipherText, keyBytes []byte) (string, error) {
 	iv := fullCipherTextBytes[:BlockSize]
 	cipherTextBytes := fullCipherTextBytes[BlockSize:]
 	cipherTextLen := len(cipherTextBytes)
-	fmt.Printf("Only cipher text lenght: %d\n", cipherTextLen)
+	//fmt.Printf("Only cipher text lenght: %d\n", cipherTextLen)
 
 	mod := cipherTextLen % BlockSize
-	fmt.Printf("Mod: %d\n", mod)
+	//fmt.Printf("Mod: %d\n", mod)
 
 	// we need to work out the padding !
 	// CBC mode always works in whole blocks.
@@ -226,8 +234,7 @@ func Encrypt_Block(blockBytes, keyBytes []byte) []byte {
 
 	// ECB and CBC requires PADDING before encrypting !
 	if mod != 0 {
-		//panic("ciphertext is not a multiple of the block size")
-		blockBytes = Pkcs7(blockBytes, BlockSize)
+		panic("ciphertext is not a multiple of the block size")
 	}
 
 	block, err := aes.NewCipher(keyBytes)
@@ -246,6 +253,15 @@ func Encrypt_Block(blockBytes, keyBytes []byte) []byte {
 // it can be used to decrypt in ECB mode or in CBC mode
 func Decrypt_Block(blockBytes, keyBytes []byte) []byte {
 
+	keyLen := len(keyBytes)
+	blockLen := len(blockBytes)
+	mod := blockLen % keyLen
+
+	// ECB and CBC requires PADDING before encrypting !
+	if mod != 0 {
+		panic("ciphertext is not a multiple of the block size")
+	}
+
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		panic(err)
@@ -253,10 +269,6 @@ func Decrypt_Block(blockBytes, keyBytes []byte) []byte {
 
 	cipherBytes := make([]byte, BlockSize)
 	block.Decrypt(cipherBytes, blockBytes)
-
-	if IsPkcs7(cipherBytes, BlockSize) {
-		cipherBytes = Unpad_Pkcs7(cipherBytes, BlockSize)
-	}
 
 	return cipherBytes
 
@@ -281,6 +293,11 @@ func EncryptAES_ECB_Manual(plainText, key string) []byte {
 		if block == blocks-1 {
 			start := block * BlockSize
 			data := plainTextBytes[start:]
+
+			// just make sure it is padded
+			// the Pkcs7 function takes care of double check it
+			data = Pkcs7(data, BlockSize)
+
 			cipherBlock := Encrypt_Block(data, keyBytes)
 			buffer.Write(cipherBlock)
 		} else {
@@ -313,5 +330,101 @@ func DecryptAES_ECB_Manual(cipherTextBytes, keyBytes []byte) []byte {
 		buffer.Write(cipherBlock)
 	}
 
+	decryptedBytes := buffer.Bytes()
+
+	if IsPkcs7(decryptedBytes, BlockSize) {
+		decryptedBytes = Unpad_Pkcs7(decryptedBytes, BlockSize)
+	}
+
+	return decryptedBytes
+
+}
+
+func EncryptAES_CBC_Manual(plainText, key string) []byte {
+
+	keyBytes := secutils.ASCIIStringToBytes(key)
+	plainTextBytes := secutils.ASCIIStringToBytes(plainText)
+	blocks := len(plainTextBytes) / BlockSize
+	mod := len(plainTextBytes) % BlockSize
+
+	if mod != 0 {
+		blocks++
+	}
+
+	iv := make([]byte, BlockSize)
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		panic(err)
+	}
+
+	var buffer bytes.Buffer
+	previousBlock := iv
+	buffer.Write(iv)
+	for block := 0; block < blocks; block++ {
+		// this is the last block which may need padding
+
+		if block == blocks-1 {
+			start := block * BlockSize
+			data := plainTextBytes[start:]
+
+			// just make sure it is padded
+			// the Pkcs7 function takes care of double check it
+			originalData := Pkcs7(data, BlockSize)
+			// XOR with the previous block
+			xored := secutils.XorBytes(originalData, previousBlock)
+
+			cipherBlock := Encrypt_Block(xored, keyBytes)
+			buffer.Write(cipherBlock)
+		} else {
+			start := block * BlockSize
+			end := start + BlockSize
+			// XOR with the previous block
+			originalData := plainTextBytes[start:end]
+			xored := secutils.XorBytes(originalData, previousBlock)
+			// Encrypt with the XORED data and assign the result to the previous block for the next cycle !
+			cipherBlock := Encrypt_Block(xored, keyBytes)
+
+			// #### THIS IS REALLY IMPORTANT !!!!!
+			// otherwise it is completely broken !!!!
+			previousBlock = cipherBlock
+
+			buffer.Write(cipherBlock)
+		}
+	}
+
 	return buffer.Bytes()
+
+}
+func DecryptAES_CBC_Manual(cipherTextBytes, keyBytes []byte) []byte {
+
+	blocks := (len(cipherTextBytes) / BlockSize) - 1 // we have to remove the IV
+	//mod := len(cipherTextBytes) % BlockSize
+
+	//if mod != 0 {
+	//	panic("ciphertext is not a multiple of the block size ")
+	//}
+
+	iv := cipherTextBytes[:BlockSize]
+	remainingBytes := cipherTextBytes[BlockSize:]
+	previousBlock := iv
+
+	var buffer bytes.Buffer
+	for block := 0; block < blocks; block++ {
+
+		blockBytes := remainingBytes[:BlockSize]
+		remainingBytes = remainingBytes[BlockSize:]
+
+		decryptedBlock := Decrypt_Block(blockBytes, keyBytes)
+		xored := secutils.XorBytes(previousBlock, decryptedBlock)
+
+		buffer.Write(xored)
+		previousBlock = blockBytes
+	}
+
+	decryptedBytes := buffer.Bytes()
+
+	if IsPkcs7(decryptedBytes, BlockSize) {
+		decryptedBytes = Unpad_Pkcs7(decryptedBytes, BlockSize)
+	}
+
+	return decryptedBytes
 }

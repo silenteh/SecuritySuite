@@ -16,7 +16,11 @@ func TestPkcs7(t *testing.T) {
 	}
 
 	padded := Pkcs7(data, blockSize)
-	fmt.Printf("%d\n", padded)
+	//fmt.Printf("%d\n", padded)
+	if len(padded) != blockSize*2 {
+		t.Error("Error applying Pkcs 7 Padding")
+	}
+	fmt.Println("1. Pkcs7 padding successfull")
 
 }
 
@@ -43,5 +47,7 @@ func TestIsPkcs7(t *testing.T) {
 	if threePads == false {
 		t.Error("Pkcs7 detection error !")
 	}
+
+	fmt.Println("2. Pkcs7 padding detection successfull")
 
 }
